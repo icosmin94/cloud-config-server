@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+    <springProperty name="profileName" source="spring.profiles.active" defaultValue="localhost"/>
+    <springProperty name="serviceName" source="spring.application.name" defaultValue="unknown-app"/>
+
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener>
+
+    <jmxConfigurator/>
+
+
+    <springProfile name="dev_workenv, devenv, testenv, qaenv, prodenv, local-with-loggly">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <Pattern>@%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] [%X{username}] [%X{req.uid}] [%X{req.ip}] [%X{req.url}] %-5level %logger{30} - %-150msg %n</Pattern>
+            </encoder>
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>TRACE</level>
+            </filter>
+        </appender>
+
+        <appender name="loggly" class="ch.qos.logback.ext.loggly.LogglyAppender">
+            <endpointUrl>http://logs-01.loggly.com/bulk/274ff570-21d8-4c2a-a783-cf87b62cee37/tag/${serviceName},${profileName}</endpointUrl>
+            <layout class="net.logstash.logback.layout.LoggingEventCompositeJsonLayout">
+                <providers>
+                    <timestamp>
+                        <fieldName>timestamp</fieldName>
+                        <timeZone>UTC</timeZone>
+                    </timestamp>
+                    <threadName/>
+                    <mdc>
+                        <includeMdcKeyName>username</includeMdcKeyName>
+                        <includeMdcKeyName>req.uid</includeMdcKeyName>
+                        <includeMdcKeyName>req.ip</includeMdcKeyName>
+                        <includeMdcKeyName>req.url</includeMdcKeyName>
+                    </mdc>
+                    <loggerName>
+                        <shortenedLoggerNameLength>20</shortenedLoggerNameLength>
+                    </loggerName>
+                    <logLevel/>
+                    <message/>
+                    <arguments/>
+                    <stackTrace>
+                        <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                            <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                            <maxLength>11000</maxLength>
+                            <shortenedClassNameLength>20</shortenedClassNameLength>
+                            <rootCauseFirst>true</rootCauseFirst>
+                        </throwableConverter>
+                    </stackTrace>
+                </providers>
+            </layout>
+        </appender>
+
+        <appender name="loggly-ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="loggly"/>
+            <queueSize>1024</queueSize>
+        </appender>
+
+        <appender name="CONSOLE-ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="CONSOLE"/>
+        </appender>
+
+
+        <logger name="com.coats.d2" level="DEBUG" additivity="false">
+            <appender-ref ref="loggly-ASYNC"/>
+            <appender-ref ref="CONSOLE-ASYNC"/>
+        </logger>
+
+        <logger name="org.springframework" level="WARN" additivity="false">
+            <appender-ref ref="loggly-ASYNC"/>
+            <appender-ref ref="CONSOLE-ASYNC"/>
+        </logger>
+
+        <logger name="org.eclipse.jetty.server" level="INFO" additivity="false">
+            <appender-ref ref="loggly-ASYNC"/>
+            <appender-ref ref="CONSOLE-ASYNC"/>
+        </logger>
+
+        <logger name="com.datastax.driver.core.QueryLogger.NORMAL" level="DEBUG" additivity="false">
+            <appender-ref ref="loggly-ASYNC"/>
+            <appender-ref ref="CONSOLE-ASYNC"/>
+        </logger>
+
+        <logger name="com.datastax.driver.core.QueryLogger.SLOW" level="DEBUG" additivity="false">
+            <appender-ref ref="loggly-ASYNC"/>
+            <appender-ref ref="CONSOLE-ASYNC"/>
+        </logger>
+
+        <logger name="com.datastax.driver.core.QueryLogger.ERROR" level="DEBUG" additivity="false">
+            <appender-ref ref="loggly-ASYNC"/>
+            <appender-ref ref="CONSOLE-ASYNC"/>
+        </logger>
+
+        <root level="INFO">
+            <appender-ref ref="loggly-ASYNC"/>
+            <appender-ref ref="CONSOLE-ASYNC"/>
+        </root>
+    </springProfile>
+
+    <springProfile
+            name="default, dev, localenv, local-with-devenv, local-with-testenv, integrationTests, unitTests">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <Pattern>@%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] [%X{username}] [%X{req.uid}] [%X{req.ip}] [%X{req.url}] %-5level %-50(%logger{30}.%M{17}:%L) - %-150msg %n</Pattern>
+            </encoder>
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>TRACE</level>
+            </filter>
+        </appender>
+
+
+        <logger name="com.coats.d2" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+
+        <logger name="org.springframework" level="WARN" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+
+        <logger name="org.eclipse.jetty.server" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+
+        <logger name="com.datastax.driver.core.QueryLogger.NORMAL" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+
+        <logger name="com.datastax.driver.core.QueryLogger.SLOW" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+
+        <logger name="com.datastax.driver.core.QueryLogger.ERROR" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+</configuration>
